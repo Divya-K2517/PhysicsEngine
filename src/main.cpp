@@ -2,18 +2,24 @@
 #include <iostream>
 #include <array>
 #include "utils.hpp"
+#include "utils.cpp"
 #include "physics.hpp"
+#include "physics.cpp"
 
 
 int main() {
 
 	sf::RenderWindow window( sf::VideoMode( { WIDTH, HEIGHT } ), "SFML works!" );
-	sf::CircleShape shape( 100.f );
-	shape.setFillColor( sf::Color::Green );
 	window.setFramerateLimit(60);
 
 	std::cout << "Window size: " << WIDTH << " x " << HEIGHT << " pixels\n";
     std::cout << "Simulation space: " << WIDTH / 100.0f << " x " << HEIGHT / 100.0f << " meters\n";
+
+	//test ball
+	Ball ball (0, 0.5f, 1.0f, sf::Vector2f(3.0f, 4.0f), sf::Color::Red); //id, radius in meters, mass in kg, CoM in meters, color
+	ball.describe();
+
+
 
 	while ( window.isOpen() )
 	{
@@ -24,7 +30,8 @@ int main() {
 		}
 
 		window.clear();
-		window.draw( shape );
+		ball.draw(window);
+
 		window.display();
 	}
 }
