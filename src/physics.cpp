@@ -108,4 +108,24 @@ public:
         //drawing to window
         window.draw(shape);
     }
+    void update() {
+        //physics calculations to update the ball's position, velocity, angle, etc. based on the forces and torques acting on it
+        //this function would be called every simulation tick to update the ball's state
+        if(this->calcPhysics) {
+            //apply the forces 
+            for (sf::Vector2f thrust : this->thrusts) {
+                //F = ma -> a = F/m
+                sf::Vector2f acceleration = thrust / this->mass;
+                this->velocity += acceleration * setTimeStep(); //update velocity based on acceleration and time step
+            }
+            for (float torque : this->torques) {
+                //torque = I * alpha -> alpha = torque / I
+                float angularAcceleration = torque / this->MoI;
+                this->angularVelocity += angularAcceleration * setTimeStep(); //update angular velocity based on angular acceleration and time step
+            }
+            //update position and angle based on velocity and angular velocity
+            this->CoM += this->velocity * setTimeStep();
+            this->angle += this->angularVelocity * setTimeStep();
+        }
+    }
 };
