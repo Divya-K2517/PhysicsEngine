@@ -4,6 +4,11 @@
 #include "utils.hpp"
 #include <optional>
 
+struct Thrust {
+    sf::Vector2f point; //point where the force is applied, relative to the CoM
+    sf::Vector2f vector; //force vector
+};
+
 class Object {
 protected:
     int id;
@@ -18,7 +23,7 @@ protected:
     std::optional<sf::Vector2f> root; //a reference point for the object, ex. a rod swinging from one end may have CoM somewhere else but needs its root at the end its swinging from
     sf::Vector2f velocity;
     float angularVelocity;
-    std::vector<sf::Vector2f> thrusts; 
+    std::vector<Thrust> thrusts; 
     std::vector<float> torques;
     std::vector<float> previousDistances; //for collision detection, stores the previous distances between this object and other objects
     Object* parent;
@@ -56,18 +61,18 @@ public:
         this->velocity = sf::Vector2f(0.0f, 0.0f); //initial velocity is 0
         this->angularVelocity = 0.0f; //initial angular velocity is 0
 
-        this->thrusts = std::vector<sf::Vector2f>(); //initially no forces acting on the object
+        this->thrusts = std::vector<Thrust>(); //initially no forces acting on the object
         this->torques = std::vector<float>(); //initially no torques 
 
         this->previousDistances = std::vector<float>(); //for collision detection, stores the previous distances between this object and other objects
         this->parent = nullptr;
     }
 
-    std::vector<sf::Vector2f> getThrusts() {
+    std::vector<Thrust> getThrusts() {
         return this->thrusts;
     }
     void reset () {
-        this->thrusts = std::vector<sf::Vector2f>(); //clear all forces acting on the object
+        this->thrusts = std::vector<Thrust>(); //clear all forces acting on the object
         this->torques = std::vector<float>(); //clear all torques acting on the object
     }
 
@@ -113,9 +118,9 @@ public:
         //this function would be called every simulation tick to update the ball's state
         if(this->calcPhysics) {
             //apply the forces 
-            for (sf::Vector2f thrust : this->thrusts) {
+            for (Thrust thrust : this->thrusts) {
                 //F = ma -> a = F/m
-                sf::Vector2f acceleration = thrust / this->mass;
+                sf::Vector2f acceleration = thrust.vector / this->mass;
                 this->velocity += acceleration * setTimeStep(); //update velocity based on acceleration and time step
             }
             for (float torque : this->torques) {
@@ -129,3 +134,52 @@ public:
         }
     }
 };
+
+float crossProduct2DVectors (sf::Vector2f a, sf::Vector2f b) {
+    return a.x * b.y - a.y * b.x;
+}
+
+
+sf::Vector3f rb(sf::Vector3f y, float t, float g, float m, std::vector<Thrust> thrusts, std::vector<float> torques, float I, float k, bool fixed) {
+        // y is the state vector, containing the velocity in x and y directions and the angle of the object
+        float vx = y.x; //new velocity in x direction
+        float vy = y.y; //new velocity in y direction
+        float theta = y.z; //angular acceleration
+
+        //operate on the forces and torques
+        if (!fixed) {
+            float sum = 0.0f; //sum of forces in x direction
+            for (Thrust thrust : thrusts) {
+                sum += thrust.vector.x;
+            }
+            //F = ma -> a = F/m, also adding a damping term proportional to velocity to prevent infinite acceleration
+            vx = (sum - k * vx) / m; 
+            sum = 0.0f; //sum of forces in y direction
+            for (Thrust thrust : thrusts) {
+                sum += thrust.vector.y;
+            }
+            vy = (sum - m*g - k * vy)/ m; //subtracting gravity force and damping term
+        }
+        
+        float torqueFromThrusts = 0.0f;
+        for (Thrust thrust : thrusts) {
+            //do the cross product of the thrust vector and the vector from the CoM to the point where the force is applied
+            torqueFromThrusts += crossProduct2DVectors(thrust.point, thrust.vector);
+        }
+        float sumTorques = 0.0f;
+        for (float torque : torques) {
+            sumTorques += torque;
+        }
+
+        //torque = I * alpha -> alpha = torque / I, also adding a damping term proportional to angular velocity to prevent infinite angular acceleration
+        //k is damping coefficient
+        theta = (torqueFromThrusts + sumTorques - k*theta) / I;
+
+        return sf::Vector3f(vx, vy, theta);
+}
+
+float resultOfForces(Object obj) {
+    // will calculate acceleration based on all of the forces in the simulation
+
+   
+}
