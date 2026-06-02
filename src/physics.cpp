@@ -2,6 +2,8 @@
 #include <iostream>
 #include <array>
 #include "utils.hpp"
+#include "utils.cpp"
+#include "physics.hpp"
 #include <optional>
 
 struct Thrust {
@@ -10,7 +12,7 @@ struct Thrust {
 };
 
 class Object {
-protected:
+public:
     int id;
     float mass;
     sf::Vector2f CoM; //center of mass
@@ -27,8 +29,6 @@ protected:
     std::vector<float> torques;
     std::vector<float> previousDistances; //for collision detection, stores the previous distances between this object and other objects
     Object* parent;
-    
-public: 
 
     //constructor
     Object (int id, float mass, sf::Vector2f CoM, float angle, sf::Color color, bool hasGravity, bool canCollide, bool checkCollisions, bool fixed, std::optional<sf::Vector2f> root){ 
@@ -67,10 +67,6 @@ public:
         this->previousDistances = std::vector<float>(); //for collision detection, stores the previous distances between this object and other objects
         this->parent = nullptr;
     }
-
-    std::vector<Thrust> getThrusts() {
-        return this->thrusts;
-    }
     void reset () {
         this->thrusts = std::vector<Thrust>(); //clear all forces acting on the object
         this->torques = std::vector<float>(); //clear all torques acting on the object
@@ -79,12 +75,12 @@ public:
 };
 
 class Ball : public Object {
-protected: 
+public: 
     float radius;
     float radiusPixels; //for rendering, the radius in pixels
     float MoI; //moment of inertia, for physics calculations
     bool calcPhysics; //whether to calculate physics for this object or not (ex. a background decoration may not need physics calculations)
-public:
+    
     //constructor
     Ball(int id, float radius,float mass, sf::Vector2f CoM, sf::Color color, float angle=0.0f, bool hasGravity=true, bool canCollide = true, bool checkCollisions = true, bool fixed=false, bool calcPhysics = true) :         Object(id, mass, CoM, angle, color, hasGravity, canCollide, checkCollisions, fixed, std::nullopt) {
         //calls the parent constructor to initialize the ball object
@@ -114,6 +110,7 @@ public:
         window.draw(shape);
     }
     void update() {
+        //TODO
         //physics calculations to update the ball's position, velocity, angle, etc. based on the forces and torques acting on it
         //this function would be called every simulation tick to update the ball's state
         if(this->calcPhysics) {
@@ -138,7 +135,13 @@ public:
 float crossProduct2DVectors (sf::Vector2f a, sf::Vector2f b) {
     return a.x * b.y - a.y * b.x;
 }
-
+sf::Vector3f operator+(sf::Vector3f a, sf::Vector3f b) {
+    return {a.x + b.x, a.y + b.y, a.z + b.z};
+}
+sf::Vector3f operator*(float s, sf::Vector3f v) {
+    return {s * v.x, s * v.y, s * v.z};
+}
+sf::Vector3f operator*(sf::Vector3f v, float s) { return s * v; }
 
 sf::Vector3f rb(sf::Vector3f y, float t, float g, float m, std::vector<Thrust> thrusts, std::vector<float> torques, float I, float k, bool fixed) {
         // y is the state vector, containing the velocity in x and y directions and the angle of the object
@@ -178,8 +181,30 @@ sf::Vector3f rb(sf::Vector3f y, float t, float g, float m, std::vector<Thrust> t
         return sf::Vector3f(vx, vy, theta);
 }
 
-float resultOfForces(Object obj) {
+sf::Vector3f resultOfForces(Ball& obj) {
+    float m = obj.mass;
+    float I = obj.MoI;
+    float dt = setTimeStep();
+    bool fixed = obj.fixed;
     // will calculate acceleration based on all of the forces in the simulation
+    sf::Vector3f y0 = sf::Vector3f(obj.velocity.x, obj.velocity.y, obj.angularVelocity);
+        
+    //the result of rb is the new velocity and angular velocity after applying the forces and torques for one time step
+    //we will integrate this result of rb ([dvx/dt, dvy/dt, dalpha/dt]) over time to get the new velocity and angle of the object
 
-   
+    float g = obj.hasGravity ? GRAVITY : 0.0f;
+
+    auto dydt = [&](sf::Vector3f y) {
+        return rb(y, 0.0f, g, m, obj.thrusts, obj.torques, I, 0.1f, fixed);
+    };
+
+    //4 evaluations of derivative
+    sf::Vector3f k1 = dydt(y0);
+    sf::Vector3f k2 = dydt(y0 + (dt/2.0f) * k1);
+    sf::Vector3f k3 = dydt(y0 + (dt/2.0f) * k2);
+    sf::Vector3f k4 = dydt(y0 + dt * k3);
+
+    //weighted avg of the 4 slopes
+    sf::Vector3f y1 = y0 + (dt / 6.0f) * (k1 + 2.0f * k2 + 2.0f * k3 + k4);
+    return y1;
 }
