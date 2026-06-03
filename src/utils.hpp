@@ -11,7 +11,8 @@ extern const unsigned int WIDTH;
 extern const unsigned int HEIGHT;
 extern const unsigned int TICK;
 extern const unsigned int SIM_MULTIPLIER; //how many times the simulation runs per render tick
-extern const unsigned int SPEED;
+extern const float SPEED;
+extern const float GRAVITY; //gravitational acceleration in m/s^2
 
 
 float meterToPixels (float meters);

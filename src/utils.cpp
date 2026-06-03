@@ -1,14 +1,16 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include <array>
+#include "utils.hpp"
+
 
 //constants
 const unsigned int WIDTH = 1280;
 const unsigned int HEIGHT = 720;
 const unsigned int TICK = 60;
 const unsigned int SIM_MULTIPLIER = 2; //how many times the simulation runs per render tick
-const unsigned int SPEED = 0.5;
-const unsigned int GRAVITY = 9.81f; //gravitational acceleration in m/s^2
+const float SPEED = 0.5f;
+const float GRAVITY = 9.81f; //gravitational acceleration in m/s^2
 
 //conversion between SI units and pixels
 float meterToPixels (float meters) {
@@ -26,5 +28,5 @@ sf::Vector2f metersToScreenCoords (float xMeters, float yMeters, float windowHei
 
 //set time step
 float setTimeStep() {
-	return 1 / TICK / SIM_MULTIPLIER * SPEED;
+	return 1.0f / (float)TICK / (float)SIM_MULTIPLIER * (float)SPEED;
 }

@@ -2,10 +2,7 @@
 #include <iostream>
 #include <array>
 #include "utils.hpp"
-#include "utils.cpp"
 #include "physics.hpp"
-#include "physics.cpp"
-
 
 
 int main() {
@@ -30,10 +27,15 @@ int main() {
 				window.close();
 		}
 
-		window.clear();
-		ball.draw(window);
+		std::cout << "pos=(" << ball.CoM.x << ", " << ball.CoM.y << ") "
+                  << "vel=(" << ball.velocity.x << ", " << ball.velocity.y << ")\n";
 
-		window.display();
+        ball.update();
+        ball.reset(); // clear forces for next frame
+
+        window.clear(sf::Color::Black);
+        ball.draw(window);
+        window.display();
 	}
 }
 
