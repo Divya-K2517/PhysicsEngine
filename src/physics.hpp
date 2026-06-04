@@ -122,6 +122,30 @@ public:
             //update position and angle with new velocities
             this->CoM += this->velocity * setTimeStep();
             this->angle += this->angularVelocity * setTimeStep();
+
+            //it has collided with ground
+            if (this->CoM.y - this->radius < 0.0f) {
+                this->CoM.y = this->radius; //make the ball sit on the ground, not go through it
+                this->velocity.y *= -0.8f; //reverse and reduce velocity
+            }
+
+            //it has collided with ceiling
+            float ceilingMeters = HEIGHT / 100.0f; //px to meters
+            if (this->CoM.y + this->radius > ceilingMeters) {
+                this->CoM.y = ceilingMeters - this->radius; //make the ball sit on the ceiling, not go through it
+                this->velocity.y *= -0.8f; //reverse and reduce velocity
+            }
+
+            //collided with left or right wall
+            float wallMeters = WIDTH / 100.0f; //px to meters
+            if (this->CoM.x - this->radius < 0.0f) {
+                this->CoM.x = this->radius;
+                this->velocity.x *= -0.8f;
+            }
+            if (this->CoM.x + this->radius > wallMeters) {
+                this->CoM.x = wallMeters - this->radius;
+                this->velocity.x *= -0.8f;
+            }
         }
     }
 };

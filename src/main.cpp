@@ -14,7 +14,7 @@ int main() {
     std::cout << "Simulation space: " << WIDTH / 100.0f << " x " << HEIGHT / 100.0f << " meters\n";
 
 	//test ball
-	Ball ball (0, 0.5f, 1.0f, sf::Vector2f(3.0f, 4.0f), sf::Color::Red); //id, radius in meters, mass in kg, CoM in meters, color
+	Ball ball (0, 0.5f, 10.0f, sf::Vector2f(3.0f, 4.0f), sf::Color::Red); //id, radius in meters, mass in kg, CoM in meters, color
 	ball.describe();
 
 

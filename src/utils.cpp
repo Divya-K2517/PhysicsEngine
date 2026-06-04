@@ -9,7 +9,7 @@ const unsigned int WIDTH = 1280;
 const unsigned int HEIGHT = 720;
 const unsigned int TICK = 60;
 const unsigned int SIM_MULTIPLIER = 2; //how many times the simulation runs per render tick
-const float SPEED = 0.5f;
+const float SPEED = 2.0f;
 const float GRAVITY = 9.81f; //gravitational acceleration in m/s^2
 
 //conversion between SI units and pixels
