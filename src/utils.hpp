@@ -13,6 +13,7 @@ extern const unsigned int TICK;
 extern const unsigned int SIM_MULTIPLIER; //how many times the simulation runs per render tick
 extern const float SPEED;
 extern const float GRAVITY; //gravitational acceleration in m/s^2
+extern const float ELASTICITY; //how bouncy the collisions are, between 0 and 1, where 1 is perfectly elastic and 0 is perfectly inelastic
 
 
 float meterToPixels (float meters);
