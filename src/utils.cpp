@@ -11,7 +11,7 @@ const unsigned int TICK = 60;
 const unsigned int SIM_MULTIPLIER = 2; //how many times the simulation runs per render tick
 const float SPEED = 2.0f;
 const float GRAVITY = 9.81f; //gravitational acceleration in m/s^2
-const float ELASTICITY = 0.8f; //how bouncy the collisions are, between 0 and 1, where 1 is perfectly elastic and 0 is perfectly inelastic
+const float ELASTICITY = 0.7f; //how bouncy the collisions are, between 0 and 1, where 1 is perfectly elastic and 0 is perfectly inelastic
 
 //conversion between SI units and pixels
 float meterToPixels (float meters) {

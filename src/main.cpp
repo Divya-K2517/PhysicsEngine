@@ -10,14 +10,25 @@ int main() {
 	sf::RenderWindow window( sf::VideoMode( { WIDTH, HEIGHT } ), "SFML works!" );
 	window.setFramerateLimit(60);
 
+	 std::vector<Ball*> balls;
+
 	std::cout << "Window size: " << WIDTH << " x " << HEIGHT << " pixels\n";
     std::cout << "Simulation space: " << WIDTH / 100.0f << " x " << HEIGHT / 100.0f << " meters\n";
 
 	//test ball
-	Ball ball (0, 0.5f, 10.0f, sf::Vector2f(3.0f, 4.0f), sf::Color::Red); //id, radius in meters, mass in kg, CoM in meters, color
-	ball.describe();
+	Ball ballA (0, 0.5f, 10.0f, sf::Vector2f(2.0f, 4.0f), sf::Color::Red); //id, radius in meters, mass in kg, CoM in meters, color
+	ballA.describe();
+	Ball ballB (1, 0.5f, 10.0f, sf::Vector2f(10.0f, 4.0f), sf::Color::Blue); //id, radius in meters, mass in kg, CoM in meters, color
+	ballB.describe();
 
+	//give velocities so they will collide
+	ballA.velocity = sf::Vector2f(5.0f, 0.0f); //1 m/s to the right
+	ballB.velocity = sf::Vector2f(-5.0f, 0.0f); //1 m/s to the left
 
+	balls.push_back(&ballA);
+	balls.push_back(&ballB);
+
+	for (Ball* b : balls) b->allBalls = &balls;
 
 	while ( window.isOpen() )
 	{
@@ -26,15 +37,14 @@ int main() {
 			if ( event->is<sf::Event::Closed>() )
 				window.close();
 		}
-
-		std::cout << "pos=(" << ball.CoM.x << ", " << ball.CoM.y << ") "
-                  << "vel=(" << ball.velocity.x << ", " << ball.velocity.y << ")\n";
-
-        ball.update();
-        ball.reset(); // clear forces for next frame
+        ballA.update();
+        ballB.update();
+        ballA.reset(); // clear forces for next frame
+        ballB.reset(); // clear forces for next frame
 
         window.clear(sf::Color::Black);
-        ball.draw(window);
+        ballA.draw(window);
+        ballB.draw(window);
         window.display();
 	}
 }

@@ -70,9 +70,10 @@ public:
 
 };
 
+//forward delcarations
 class Ball;
 sf::Vector3f resultOfForces(Ball& obj);
-
+void BallCollision(Ball& ballA, Ball& ballB, sf::Vector2f ptA, sf::Vector2f ptB);
 
 class Ball : public Object {
 public: 
@@ -80,7 +81,8 @@ public:
     float radiusPixels; //for rendering, the radius in pixels
     float MoI; //moment of inertia, for physics calculations
     bool calcPhysics; //whether to calculate physics for this object or not (ex. a background decoration may not need physics calculations)
-    
+    std::vector<Ball*>* allBalls; //list of balls in the system
+        //allballs is a pointer the list of balls
     //constructor
     Ball(int id, float radius,float mass, sf::Vector2f CoM, sf::Color color, float angle=0.0f, bool hasGravity=true, bool canCollide = true, bool checkCollisions = true, bool fixed=false, bool calcPhysics = true) :         Object(id, mass, CoM, angle, color, hasGravity, canCollide, checkCollisions, fixed, std::nullopt) {
         //calls the parent constructor to initialize the ball object
@@ -88,6 +90,7 @@ public:
         this->radiusPixels = meterToPixels(radius);
         this->MoI = 0.4f * mass * radius * radius; //moment of inertia for a solid sphere
         this->calcPhysics = calcPhysics;
+        this->allBalls = nullptr; //will be set later after all balls are created
     }
 
     void describe() {
@@ -146,6 +149,39 @@ public:
                 this->CoM.x = wallMeters - this->radius;
                 this->velocity.x *= -0.8f;
             }
+
+            checkBallCollisions();
+
+        }
+    }
+    void checkBallCollisions(){
+        if (!this->allBalls || !this->canCollide) {
+            return; //no other balls to check collisions with
+        }
+        for (Ball* other : *this->allBalls) {
+            // don't check against self
+            if (other->id == this->id) continue;
+            // don't check against non-collidable balls
+            if (!other->canCollide) continue;
+            // only check if other ball has higher id, to avoid resolving same pair twice
+            if (other->id < this->id) continue;
+
+            sf::Vector2f diff = other->CoM - this->CoM;
+            float dist = std::sqrt(diff.x * diff.x + diff.y * diff.y);
+
+            if (dist < this->radius + other->radius && dist > 0.0f) {
+                // push apart
+                float overlap = (this->radius + other->radius) - dist;
+                sf::Vector2f normal = diff / dist;
+                this->CoM -= normal * (overlap / 2.0f);
+                other->CoM += normal * (overlap / 2.0f);
+
+                // collision points
+                sf::Vector2f ptA = this->CoM + normal * this->radius;
+                sf::Vector2f ptB = other->CoM - normal * other->radius;
+
+                BallCollision(*this, *other, ptA, ptB);
+            }
         }
     }
 };
@@ -157,6 +193,7 @@ sf::Vector3f operator*(float s, sf::Vector3f v);
 sf::Vector3f operator*(sf::Vector3f v, float s);
 sf::Vector3f rb(sf::Vector3f y, float t, float g, float m, std::vector<Thrust> thrusts, std::vector<float> torques, float I, float k, bool fixed);
 sf::Vector3f resultOfForces(Ball& obj);
+void BallCollision(Ball& ballA, Ball& ballB, sf::Vector2f ptA, sf::Vector2f ptB);
 
 
 #endif // physics_hpp

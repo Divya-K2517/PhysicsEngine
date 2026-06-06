@@ -138,8 +138,8 @@ void BallCollision(Ball& ballA, Ball& ballB, sf::Vector2f ptA, sf::Vector2f ptB)
     //impulse scalar, which tells us how much force to apply to each object to resolve the collision
     float impulse = (
         crossProduct2DVectors(relPtV, AtoB) *
-        -(1+ELASTICITY) / //coefficient of restitution, how bouncy the collision is
-        (1/ballA.mass + 1/ballB.mass + rA + rB)
+        -(1+ELASTICITY) /
+        (1/ballA.mass + 1/ballB.mass + rA*rA + rB*rB)
     );
 
     //update velocities
