@@ -185,6 +185,52 @@ public:
         }
     }
 };
+class Spring : public Object {
+    public: 
+        Object* objA;
+        Object* objB;
+        float strength; //spring constant
+        int widthPx;
+        float restLength; //length of spring at rest
+
+    Spring (int id, Object* objA, Object* objB, float strength, sf::Color color, float restLength) 
+        : Object(id, mass=0.0f, CoM=sf::Vector2f(0.0f, 0.0f), angle=0.0f, color=color, hasGravity=false, canCollide=false, checkCollisions=false, fixed=true, std::nullopt) {
+        //calls the parent constructor to initialize the spring object
+        //a spring is massless and fixed in place, it just applies forces to the objects it connects
+        this->objA = objA;
+        this->objB = objB;
+        this->strength = strength;
+        this->widthPx = 15;
+        this->restLength = restLength;
+    }
+
+    void getForces() {
+        //distance between the two objects
+        sf::Vector2f diff = objB->CoM - objA->CoM;
+        float length = std::sqrt(diff.x * diff.x + diff.y * diff.y);
+        if (length == 0) return; //to avoid division by 0
+
+        float extension = length - restLength; //how much is the spring extended
+        float forceMagnitude = strength * extension;
+
+        //unit vector A to B
+        sf::Vector2f dirAtoB = diff / length;
+
+        //thrust on A, or the pull towards B
+        Thrust thrustA;
+        thrustA.vector = dirAtoB * forceMagnitude;
+        thrustA.point = sf::Vector2f(0.0f, 0.0f); // the force is applied at CoM
+
+        //thrust on B, or the pull towards A
+        Thrust thrustB;
+        thrustB.vector = -dirAtoB * forceMagnitude; //equal and opposite force on B
+        thrustB.point = sf::Vector2f(0.0f, 0.0f); // the force is applied at CoM
+        
+        objA->thrusts.push_back(thrustA);
+        objB->thrusts.push_back(thrustB);
+    }
+
+};
 
 
 float crossProduct2DVectors (sf::Vector2f a, sf::Vector2f b);
