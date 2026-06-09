@@ -229,6 +229,59 @@ class Spring : public Object {
         objA->thrusts.push_back(thrustA);
         objB->thrusts.push_back(thrustB);
     }
+    //no update function bc the spring itself wont move
+
+    void draw(sf::RenderWindow& window) {
+        //rendering code using SFML, draws a line between the two objects it connects
+        
+        sf::Vector2f pixelA = metersToScreenCoords(objA->CoM.x, objA->CoM.y, HEIGHT);
+        sf::Vector2f pixelB = metersToScreenCoords(objB->CoM.x, objB->CoM.y, HEIGHT);
+
+        //we are making the spring spiral
+        sf::Vector2f delta = pixelB - pixelA; //direction
+        float length = std::sqrt(delta.x * delta.x + delta.y * delta.y);
+        if (length < 1.0f) return;
+
+        sf::Vector2f along = delta / length; //unit vector
+        sf::Vector2f perp(-along.y, along.x); //perpendicular unit vector
+        
+        const int   coils      = 10;    // number of coil loops
+        const float amplitude  = 8.0f; // half-width of the coil in pixels
+        const int   segments   = coils * 16; // smoothness
+        const float endcap     = 12.0f; // straight lead-in/out in pixels
+
+        auto makeVertex = [&](sf::Vector2f pos) {
+            sf::Vertex v;
+            v.position = pos;
+            v.color = this->color;
+            return v;
+        };
+
+        std::vector<sf::Vertex> verts;
+        verts.reserve(segments + 3);
+
+        // start point of the coil, after the straight endcap
+        sf::Vector2f coilStart = pixelA + along * endcap;
+        float coilLength = std::max(length - 2.0f * endcap, 1.0f);
+
+        verts.push_back(makeVertex(pixelA));
+
+        //for each segment, calculate the position along the line and add a perpendicular offset to create the coil effect
+        for (int i = 0; i <= segments; ++i) {
+            float t    = static_cast<float>(i) / segments;
+            float sine = std::sin(t * coils * 2.0f * 3.14159265f);
+            sf::Vector2f pt = coilStart + along * (t * coilLength)
+                                        + perp  * (sine * amplitude);
+            verts.push_back(makeVertex(pt));
+        }
+
+        verts.push_back(makeVertex(pixelB));
+
+        window.draw(verts.data(), verts.size(), sf::PrimitiveType::LineStrip);
+
+
+    }
+
 
 };
 

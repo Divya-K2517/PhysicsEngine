@@ -30,6 +30,10 @@ int main() {
 
 	for (Ball* b : balls) b->allBalls = &balls;
 
+	//this spring will connect balls A and B
+	//balls start 4m apart so the spring will bring them tg
+	Spring spring(2, &ballA, &ballB, 20.0f, sf::Color::White, 3.0f);
+
 	while ( window.isOpen() )
 	{
 		while ( const std::optional event = window.pollEvent() )
@@ -37,12 +41,17 @@ int main() {
 			if ( event->is<sf::Event::Closed>() )
 				window.close();
 		}
+
+		//apply thr forces from spring onto ball
+		spring.getForces();
+
         ballA.update();
         ballB.update();
         ballA.reset(); // clear forces for next frame
         ballB.reset(); // clear forces for next frame
 
         window.clear(sf::Color::Black);
+		spring.draw(window);
         ballA.draw(window);
         ballB.draw(window);
         window.display();
