@@ -84,6 +84,11 @@ public:
     std::vector<Ball*>* allBalls; //list of balls in the system
         //allballs is a pointer the list of balls
     //constructor
+
+    bool isDragged; //whether this ball is currently being dragged
+    sf::Vector2f prevDragPos; //mouse position (meters) last frame, for throw velocity
+
+
     Ball(int id, float radius,float mass, sf::Vector2f CoM, sf::Color color, float angle=0.0f, bool hasGravity=true, bool canCollide = true, bool checkCollisions = true, bool fixed=false, bool calcPhysics = true) :         Object(id, mass, CoM, angle, color, hasGravity, canCollide, checkCollisions, fixed, std::nullopt) {
         //calls the parent constructor to initialize the ball object
         this->radius = radius;
@@ -91,6 +96,36 @@ public:
         this->MoI = 0.4f * mass * radius * radius; //moment of inertia for a solid sphere
         this->calcPhysics = calcPhysics;
         this->allBalls = nullptr; //will be set later after all balls are created
+        this->isDragged = false;
+        this->prevDragPos = sf::Vector2f(0.0f, 0.0f);
+    }
+
+    // checks if a click (in meters) lands on this ball; if so, starts dragging
+    bool tryStartDrag(sf::Vector2f clickMeters) {
+        sf::Vector2f diff = this->CoM - clickMeters;
+        float dist = std::sqrt(diff.x * diff.x + diff.y * diff.y);
+        if (dist < this->radius) {
+            this->isDragged = true;
+            this->velocity = sf::Vector2f(0.0f, 0.0f);
+            this->angularVelocity = 0.0f;
+            this->fixed = true; // ignore forces while dragging
+            this->prevDragPos = clickMeters;
+            return true;
+        }
+        return false;
+    }
+    // call every frame while mouse button held, with current mouse position in meters
+    void updateDrag(sf::Vector2f mouseMeters) {
+        if (!this->isDragged) return;
+        sf::Vector2f delta = mouseMeters - this->prevDragPos;
+        this->velocity = delta / setTimeStep(); // store for throw velocity on release
+        this->prevDragPos = mouseMeters;
+    }
+    // call on mouse release
+    void endDrag() {
+        if (!this->isDragged) return;
+        this->isDragged = false;
+        this->fixed = false; // gravity/forces resume, using last-set velocity as throw speed
     }
 
     void describe() {
@@ -125,31 +160,33 @@ public:
             //update position and angle with new velocities
             this->CoM += this->velocity * setTimeStep();
             this->angle += this->angularVelocity * setTimeStep();
+            if (this->isDragged) {
+                this->CoM = this->prevDragPos;
+            } else {
+                //it has collided with ground
+                if (this->CoM.y - this->radius < 0.0f) {
+                    this->CoM.y = this->radius; //make the ball sit on the ground, not go through it
+                    this->velocity.y *= -0.8f; //reverse and reduce velocity
+                }
 
-            //it has collided with ground
-            if (this->CoM.y - this->radius < 0.0f) {
-                this->CoM.y = this->radius; //make the ball sit on the ground, not go through it
-                this->velocity.y *= -0.8f; //reverse and reduce velocity
-            }
+                //it has collided with ceiling
+                float ceilingMeters = HEIGHT / 100.0f; //px to meters
+                if (this->CoM.y + this->radius > ceilingMeters) {
+                    this->CoM.y = ceilingMeters - this->radius; //make the ball sit on the ceiling, not go through it
+                    this->velocity.y *= -0.8f; //reverse and reduce velocity
+                }
 
-            //it has collided with ceiling
-            float ceilingMeters = HEIGHT / 100.0f; //px to meters
-            if (this->CoM.y + this->radius > ceilingMeters) {
-                this->CoM.y = ceilingMeters - this->radius; //make the ball sit on the ceiling, not go through it
-                this->velocity.y *= -0.8f; //reverse and reduce velocity
+                //collided with left or right wall
+                float wallMeters = WIDTH / 100.0f; //px to meters
+                if (this->CoM.x - this->radius < 0.0f) {
+                    this->CoM.x = this->radius;
+                    this->velocity.x *= -0.8f;
+                }
+                if (this->CoM.x + this->radius > wallMeters) {
+                    this->CoM.x = wallMeters - this->radius;
+                    this->velocity.x *= -0.8f;
+                }
             }
-
-            //collided with left or right wall
-            float wallMeters = WIDTH / 100.0f; //px to meters
-            if (this->CoM.x - this->radius < 0.0f) {
-                this->CoM.x = this->radius;
-                this->velocity.x *= -0.8f;
-            }
-            if (this->CoM.x + this->radius > wallMeters) {
-                this->CoM.x = wallMeters - this->radius;
-                this->velocity.x *= -0.8f;
-            }
-
             checkBallCollisions();
 
         }
